@@ -3,7 +3,8 @@ import httpx
 import json
 import sys
 
-BASE = "http://127.0.0.1:8000"
+import os
+BASE = os.getenv("BRIEFFORGE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 def test_summarize():
     print("=== Testing POST /summarize ===")
