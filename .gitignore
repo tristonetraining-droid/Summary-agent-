@@ -1,0 +1,17 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Raw downloaded PDFs (may contain client material)
+samples/*.pdf
+output/*.md
+output/audit_log.json
+
+# OS
+.DS_Store
+Thumbs.db
