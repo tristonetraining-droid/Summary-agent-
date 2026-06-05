@@ -1,97 +1,140 @@
-# BriefForge
+# CIMSummarizer — Tristone Strategic Partners
 
-Autonomous agent for **Tristone Strategic Partners** that turns institutional
-research reports (primarily J.P. Morgan / Chase Wealth Management) into
-one-page executive summaries for the CEO.
+AI-assisted pipeline: CIM PDF → 4-page editable Deal Summary → DOCX / PDF export.
 
-**Day 1 scope:** local pipeline only — URL in, polished markdown summary out.
-No email integration, no orchestrator, no deployment yet.
+---
 
-```
-landing-page URL
-      |
-      v
-[Playwright] -- click "Read the report (PDF)" --> PDF file
-      |
-      v
-[pdfplumber] -- hash + page count + text + section split
-      |
-      v
-[Claude MAP]  -- per-section grounded summaries  (structured tool use)
-      |
-      v
-[Claude REDUCE] -- one-page ExecutiveSummary    (structured tool use)
-      |
-      v
-output/summary_<ts>_<run_id>.md + audit_log.json
-```
+## Quick Start
 
-## Guardrails
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- [LibreOffice](https://www.libreoffice.org/download/download-libreoffice/) (for PDF export — install and ensure `soffice` is on PATH)
+- [Poppler](https://github.com/oschwartz10612/poppler-windows/releases/) on PATH (for `pdf2image` page rasterization — Windows: unzip and add `bin/` to PATH)
 
-- **Grounding** — every figure must trace to the source report. Claude is
-  pinned to structured tool output that mirrors our Pydantic models, so it
-  cannot invent fields. The MAP step explicitly tells the model to use
-  only facts present in the section text.
-- **Audit** — every run appends an `AuditRecord` to `output/audit_log.json`
-  (run id, source URL, PDF SHA-256, timestamp, model, page count, output
-  path, status).
-- **Secrets** — `ANTHROPIC_API_KEY` is loaded from `.env` only.
-- **No silent truncation** — long reports go through map-reduce; we never
-  cut content to fit a context window.
-- **Error handling** — every external call (Playwright nav, PDF parse,
-  Claude call) is wrapped with a clear, actionable message on failure.
+---
 
-## Setup (Windows / PowerShell)
+### 1. Backend
 
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate          # Windows
 pip install -r requirements.txt
-playwright install chromium
-copy .env.example .env
-# then edit .env and paste your ANTHROPIC_API_KEY
 ```
 
-## Run
-
-```powershell
-python pipeline.py "https://www.chase.com/personal/investments/mid-year-outlook"
+Set your Anthropic API key in `backend/.env`:
+```
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-You will see download progress, per-section MAP progress, a synthesis
-step, and the final summary rendered in the terminal. The markdown file
-lands in `output/`.
+Place Tristone's `CIM_Template.docx` in `backend/templates/` (optional — if absent, a generated layout is used).
 
-## Project layout
+Start the API:
+```bash
+cd backend
+python service.py
+# → http://localhost:8000
+```
+
+---
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+# → http://localhost:3000
+```
+
+---
+
+### 3. Use
+
+1. Open **http://localhost:3000**
+2. Drop a CIM PDF, enter deal name + sponsor, click **Start summarization**
+3. Watch the live 5-stage progress timeline (~2–5 min)
+4. Edit page opens automatically — live WYSIWYG preview on the left, collapsible section editors on the right
+5. Click **Export PDF** (server-side LibreOffice) or **DOCX** to download
+
+---
+
+## CLI (no frontend needed)
+
+```bash
+cd backend
+.venv\Scripts\activate
+python pipeline.py "path/to/CIM.pdf" --deal "Tailwind" --sponsor "ABC Capital" --out ./out
+```
+
+Outputs: `out/CIM_Summary_Tailwind.docx` + `out/summary.json`
+
+---
+
+## Architecture
 
 ```
-briefforge/
-  pipeline.py            entry point: python pipeline.py <url>
+Stage 1 INGEST     pdfplumber extracts text + tables per page; pdf2image rasterizes
+Stage 2 CLASSIFY   Claude Sonnet maps CIM pages → 11 output sections
+Stage 3 EXTRACT    Claude Haiku (parallel) extracts each section → Pydantic model
+Stage 4 SYNTHESIZE Claude Sonnet: tone correction, consistency, S&U validation
+Stage 5 ASSEMBLE   python-docx populates template → .docx
+Stage 6 EXPORT     LibreOffice headless converts .docx → .pdf
+```
+
+## File Structure
+
+```
+backend/
+  pipeline.py          CLI entry point
+  service.py           FastAPI + SSE
   src/
-    config.py            env loading, model constants, paths
-    models.py            Pydantic schemas (SectionSummary, ExecutiveSummary, AuditRecord)
-    downloader.py        Playwright: URL -> PDF (click / new-tab / direct)
-    parser.py            PDF -> text + sections (heading-aware, even-split fallback)
-    summarizer.py        Claude map-reduce with structured tool use
-    audit.py             JSON audit log (Postgres in Day 2)
-  samples/               downloaded PDFs
-  output/                generated summaries + audit_log.json
+    config.py          env + constants
+    models.py          Pydantic CIMSummary + JobState
+    ingest.py          PDF extraction
+    classifier.py      Section mapping
+    extractors.py      11 parallel Claude Haiku extractors
+    synthesizer.py     Tone + consistency pass
+    assembler.py       python-docx DOCX builder
+    pdf_export.py      LibreOffice PDF conversion
+    pipeline_core.py   Orchestrator
+    jobs.py            Job registry (in-memory + on-disk)
+    llm.py             Anthropic client wrapper (tool_use → Pydantic)
+    prompts/
+      classifier.txt   Section classifier prompt
+      tone_rules.txt   PE language rules (applied to all extractors)
+      sections.py      Per-section extractor prompts + synthesizer
+  templates/
+    CIM_Template.docx  Tristone template (add manually)
+
+frontend/
+  app/
+    page.tsx                   Upload + deal form
+    jobs/[id]/page.tsx         Live progress (SSE)
+    jobs/[id]/edit/page.tsx    Editable preview + export
+  components/
+    DealSummaryPreview.tsx     4-page WYSIWYG (template-matching CSS)
+    SectionEditors.tsx         Collapsible per-section editors
+  lib/
+    types.ts                   TypeScript mirrors of Pydantic models
+    api.ts                     Fetch wrappers
 ```
 
-## Roadmap
+## Environment Variables
 
-- **Day 2** — Postgres-backed audit, email ingest (IMAP / Gmail API),
-  n8n orchestrator, deployment.
+| Variable | Default | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | required | Anthropic API key |
+| `CLAUDE_MODEL_SONNET` | `claude-sonnet-4-5` | Classifier + synthesizer model |
+| `CLAUDE_MODEL_HAIKU` | `claude-haiku-4-5` | Per-section extractor model |
+| `JOBS_DIR` | `./.jobs` | Job state + uploads storage |
+| `TEMPLATE_PATH` | `./templates/CIM_Template.docx` | Tristone DOCX template |
+| `LIBREOFFICE_BIN` | `soffice` | LibreOffice binary name |
+| `ALLOW_ORIGINS` | `http://localhost:3000` | CORS origins (comma-separated) |
 
-## Testing individual stages
-
-```powershell
-# models load
-python -c "from src.models import ExecutiveSummary; print('ok')"
-
-# downloader only
-python -m src.downloader "<landing-page-url>"
-
-# parser only
-python -m src.parser samples\<your.pdf>
-```
+## Phase 2 (next)
+- n8n email trigger → POST /api/jobs
+- PostgreSQL audit log
+- FastAPI deployment on Railway / Tristone VPS
+- OCR fallback for scanned CIMs (pytesseract)

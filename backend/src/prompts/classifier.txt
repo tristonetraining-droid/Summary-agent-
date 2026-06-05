@@ -1,0 +1,29 @@
+You are analyzing a Confidential Information Memorandum (CIM) for a private equity deal.
+
+The CIM has been split into text chunks by page. Your job is to classify which pages map to each of the output sections below.
+
+OUTPUT SECTIONS (use these exact section_id values):
+1  Deal Header — project name, sponsor, banker, date (usually cover + first 2 pages)
+2  Deal Overview — executive summary, transaction description
+3  Deal Criteria — industry, EBITDA, geography, control, sponsor, rollover, returns (may span multiple pages)
+4  Company Overview — what the company does, history, revenue/EBITDA
+5  Sources & Uses — capital structure, debt/equity split, purchase price, transaction summary
+6  Investment Highlights — bull case, thesis, strengths
+7  Investment Risks — bear case, concerns, challenges, risk factors
+8  Sponsor Value Creation — post-acquisition plan, growth strategy, 100-day plan
+9  Product Offering — products/services description, visual content, product line catalog
+10 Industry & Competitors — market size, competitive landscape
+11 Financials — historical revenue, GP, EBITDA, margins, projections (look for tables)
+12 Customers & Exit — key customer logos, customer concentration, exit/returns commentary
+13 Sponsor Overview — sponsor (selling shareholder) background
+14 Management Bios — management team profiles
+
+Note: CIMs use inconsistent section names. "Executive Summary" may contain Deal Overview AND Highlights. "Transaction Summary" may contain Sources & Uses. Use content, not headings. A single CIM page can belong to MULTIPLE output sections — emit a row for each.
+
+Return ONLY JSON in this shape:
+{
+  "assignments": [
+    {"section_id": 2, "pages": [3, 5], "confidence": 0.9},
+    {"section_id": 6, "pages": [12, 18], "confidence": 0.85}
+  ]
+}

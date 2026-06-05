@@ -1,0 +1,17 @@
+CRITICAL TONE RULE:
+You are writing for a private equity investment committee. Use simple, professional PE language. Marketing language is STRICTLY FORBIDDEN.
+
+FORBIDDEN patterns:
+- "market-leading", "best-in-class", "world-class", "cutting-edge", "premier"
+- "tremendous", "significant", "substantial" (without numbers)
+- "poised for growth", "well-positioned", "uniquely positioned"
+- "attractive", "compelling", "robust" (without quantification)
+- Any superlative without a specific number backing it
+- Bank pitch language ("exciting opportunity", "highly differentiated")
+
+REQUIRED patterns:
+- State facts with numbers: "Revenue of $52M, growing at 8% CAGR (2021-2024)"
+- Neutral descriptions: "The Company provides [X] to [Y segment]"
+- Quantified risk: "Customer concentration: top 3 = 45% of revenue"
+- Specific deal terms: "6.5x LTM EBITDA, 55% senior debt"
+- If a number isn't in the CIM, omit the claim. Never invent numbers.

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIM Summarizer — How It Works</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080c14;
+    --bg2: #0f1520;
+    --bg3: #161e2e;
+    --border: rgba(255,255,255,0.07);
+    --blue: #3b82f6;
+    --blue-light: #60a5fa;
+    --green: #10b981;
+    --teal: #2dd4bf;
+    --purple: #a78bfa;
+    --amber: #f59e0b;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 72px 24px 48px;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,130,246,0.18), transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(59,130,246,0.15);
+    border: 1px solid rgba(59,130,246,0.35);
+    color: var(--blue-light);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #f1f5f9 30%, #60a5fa 70%, #2dd4bf);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  .hero p {
+    font-size: 17px;
+    color: var(--muted2);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* ── SECTION WRAPPER ── */
+  .section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 56px 24px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue-light);
+    margin-bottom: 10px;
+  }
+  .section h2 {
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 40px;
+  }
+
+  /* ── FULL FLOW ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    width: 100%;
+    max-width: 720px;
+    position: relative;
+  }
+  .flow-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .flow-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .flow-line {
+    width: 2px;
+    flex: 1;
+    min-height: 32px;
+    background: linear-gradient(to bottom, rgba(59,130,246,0.5), rgba(59,130,246,0.1));
+    margin: 0 auto;
+  }
+  .flow-body {
+    flex: 1;
+    padding: 4px 0 36px;
+  }
+  .flow-body h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .flow-body p {
+    font-size: 14px;
+    color: var(--muted2);
+  }
+  .flow-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+  }
+
+  /* ── PIPELINE STAGES ── */
+  .pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2px;
+    background: var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .pipeline-stage {
+    background: var(--bg2);
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+  .pipeline-stage:hover { background: var(--bg3); }
+  .pipeline-stage::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .pipeline-stage .stage-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .pipeline-stage .stage-icon { font-size: 26px; margin-bottom: 10px; display: block; }
+  .pipeline-stage h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .pipeline-stage p { font-size: 13px; color: var(--muted2); }
+  .pipeline-stage .stage-tech {
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    display: inline-block;
+    color: var(--muted2);
+  }
+
+  /* ── COMPONENT CARDS ── */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .comp-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .comp-card:hover {
+    border-color: rgba(59,130,246,0.3);
+    transform: translateY(-2px);
+  }
+  .comp-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .comp-card:hover::before { opacity: 1; }
+  .comp-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+  .comp-card .layer-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .comp-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .comp-card p { font-size: 13px; color: var(--muted2); margin-bottom: 12px; }
+  .comp-card .how {
+    font-size: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--muted2);
+    line-height: 1.7;
+  }
+  .comp-card .how strong { color: var(--text); }
+
+  /* ── TECH STACK ── */
+  .tech-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .tech-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted2);
+  }
+  .tech-pill .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  /* ── SSE EXPLAINER ── */
+  .sse-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .sse-side {
+    background: var(--bg3);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .sse-side .icon { font-size: 32px; margin-bottom: 8px; }
+  .sse-side h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .sse-side p { font-size: 12px; color: var(--muted); }
+  .sse-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--blue-light);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .sse-arrow .arr { font-size: 22px; animation: pulse-arrow 1.4s ease-in-out infinite; }
+  @keyframes pulse-arrow {
+    0%, 100% { opacity: 0.4; transform: translateX(0); }
+    50% { opacity: 1; transform: translateX(4px); }
+  }
+  .sse-events {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .sse-event {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    color: var(--muted2);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .sse-event .stage-lbl {
+    color: var(--blue-light);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* ── DATA MODEL ── */
+  .json-box {
+    background: #0a0f1a;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+    font-size: 12.5px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+  .json-key   { color: #93c5fd; }
+  .json-str   { color: #86efac; }
+  .json-num   { color: #fdba74; }
+  .json-bool  { color: #a78bfa; }
+  .json-muted { color: var(--muted); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+  .footer strong { color: var(--muted2); }
+
+  /* Colour helpers */
+  .c-blue   { color: var(--blue-light); }
+  .c-green  { color: var(--green); }
+  .c-teal   { color: var(--teal); }
+  .c-purple { color: var(--purple); }
+  .c-amber  { color: var(--amber); }
+  .bg-blue   { background: rgba(59,130,246,0.12); }
+  .bg-green  { background: rgba(16,185,129,0.12); }
+  .bg-teal   { background: rgba(45,212,191,0.12); }
+  .bg-purple { background: rgba(167,139,250,0.12); }
+  .bg-amber  { background: rgba(245,158,11,0.12); }
+  .b-blue   { border-color: rgba(59,130,246,0.35) !important; }
+  .b-green  { border-color: rgba(16,185,129,0.35) !important; }
+  .b-purple { border-color: rgba(167,139,250,0.35) !important; }
+  .b-amber  { border-color: rgba(245,158,11,0.35) !important; }
+  .accent-blue   { background: linear-gradient(135deg,#3b82f6,#60a5fa); }
+  .accent-green  { background: linear-gradient(135deg,#10b981,#34d399); }
+  .accent-purple { background: linear-gradient(135deg,#8b5cf6,#a78bfa); }
+  .accent-amber  { background: linear-gradient(135deg,#f59e0b,#fbbf24); }
+  .accent-teal   { background: linear-gradient(135deg,#0d9488,#2dd4bf); }
+  .accent-pink   { background: linear-gradient(135deg,#ec4899,#f472b6); }
+
+  @media (max-width: 640px) {
+    .sse-box { grid-template-columns: 1fr; }
+    .sse-arrow { transform: rotate(90deg); }
+    .pipeline-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-badge">System Explainer</div>
+  <h1>CIM Summarizer<br/>How It Works</h1>
+  <p>Upload a 100-page investment document. Get a clean, AI-generated summary you can edit and export — in minutes.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ FULL FLOW -->
+<div class="section">
+  <div class="section-title">End-to-End Flow</div>
+  <h2>The Complete Journey</h2>
+
+  <div class="flow">
+
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-dot accent-blue" style="color:#fff;">📄</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag c-blue bg-blue">Step 1 — Frontend</span>
+        <h3>User Uploads PDF</h3>
+        <p>The user visits the home page, enters a <strong>Deal Name</strong> and <strong>Sponsor Name</strong>, then drags and drops a CIM PDF file. They click <em>Analyse</em>.</p>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-dot accent-purple" style="color:#fff;">⚙️</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag c-purple bg-purple">Step 2 — Backend</span>
+        <h3>Backend Creates a Job</h3>
+        <p>The file is sent to <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;">POST /api/jobs</code>. The backend saves the PDF to disk, creates a <strong>Job object</strong> with a unique ID (like a ticket number), and puts it in a queue. It immediately returns the Job ID to the frontend.</p>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-dot accent-blue" style="color:#fff;">📡</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag c-blue bg-blue">Step 3 — Frontend</span>
+        <h3>Progress Page Opens + SSE Begins</h3>
+        <p>The frontend navigates to <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;">/jobs/{id}</code> and opens a live <strong>Server-Sent Events</strong> stream. Like a radio broadcast — the backend keeps sending stage updates and the frontend listens in real time, animating each pipeline step.</p>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-dot accent-amber" style="color:#fff;">🤖</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag c-amber bg-amber">Step 4 — AI Pipeline</span>
+        <h3>5-Stage AI Pipeline Runs</h3>
+        <p>The backend processes the PDF through 5 stages: <strong>Ingest → Classify → Extract → Synthesize → Assemble</strong>. Each stage emits progress events that stream to the browser. Detailed breakdown below ↓</p>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-dot accent-green" style="color:#fff;">✏️</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag c-green bg-green">Step 5 — Frontend</span>
+        <h3>Edit Page — Live Preview + Editors</h3>
+        <p>Pipeline completes → browser auto-navigates to <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;">/jobs/{id}/edit</code>. Left side shows a scaled live document preview. Right side shows accordion editors for each CIM section. Every keystroke <strong>autosaves after 800ms</strong>.</p>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-dot accent-teal" style="color:#fff;">💾</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag c-teal bg-teal">Step 6 — Database</span>
+        <h3>Save to History (Supabase)</h3>
+        <p>User clicks <em>"Save to History"</em>. The full summary JSON is sent to <strong>Supabase</strong> (cloud database) with a timestamp. It can be retrieved later from the History drawer by clicking any saved deal.</p>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-left">
+        <div class="flow-dot accent-pink" style="color:#fff;">📥</div>
+      </div>
+      <div class="flow-body">
+        <span class="flow-tag" style="color:#f472b6;background:rgba(236,72,153,0.12);">Step 7 — Export</span>
+        <h3>Export PDF or DOCX</h3>
+        <p>Clicking <em>Export PDF</em> or <em>DOCX</em> sends the latest summary to the backend. It builds a formatted Word document using <strong>python-docx</strong>, then converts to PDF via <strong>LibreOffice headless</strong>. The file downloads instantly.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ═══════════════════════════════════════════════ PIPELINE STAGES -->
+<div class="section">
+  <div class="section-title">AI Pipeline</div>
+  <h2>5 Stages Inside the Backend</h2>
+
+  <div class="pipeline-grid">
+
+    <div class="pipeline-stage">
+      <div style="background:linear-gradient(90deg,#3b82f6,#60a5fa)" class="pipeline-stage::before"></div>
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3b82f6,#60a5fa)"></div>
+      <div class="stage-num">Stage 1</div>
+      <span class="stage-icon">📄</span>
+      <h4 class="c-blue">Ingest</h4>
+      <p>Reads every page of the PDF and extracts raw text. Handles multi-column layouts, tables, and encoded fonts.</p>
+      <span class="stage-tech">pdfplumber</span>
+    </div>
+
+    <div class="pipeline-stage">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8b5cf6,#a78bfa)"></div>
+      <div class="stage-num">Stage 2</div>
+      <span class="stage-icon">🗂️</span>
+      <h4 class="c-purple">Classify</h4>
+      <p>Sends page text to GPT and asks: <em>"Which CIM section does this page belong to?"</em> — Deal Overview, Sources & Uses, Investment Highlights, etc.</p>
+      <span class="stage-tech">GPT-4o</span>
+    </div>
+
+    <div class="pipeline-stage">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+      <div class="stage-num">Stage 3</div>
+      <span class="stage-icon">⚡</span>
+      <h4 class="c-amber">Extract</h4>
+      <p>Fires 11 AI calls <strong>in parallel</strong> — one per CIM section. Each call extracts structured data: tables, criteria checkboxes, bullet points, financial figures.</p>
+      <span class="stage-tech">GPT-4o · ThreadPoolExecutor</span>
+    </div>
+
+    <div class="pipeline-stage">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#0d9488,#2dd4bf)"></div>
+      <div class="stage-num">Stage 4</div>
+      <span class="stage-icon">✨</span>
+      <h4 class="c-teal">Synthesize</h4>
+      <p>One final AI pass that reviews all sections together — fixes inconsistencies, aligns tone, and ensures numbers are consistent across sections.</p>
+      <span class="stage-tech">GPT-4o</span>
+    </div>
+
+    <div class="pipeline-stage" style="grid-column: span 1;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981,#34d399)"></div>
+      <div class="stage-num">Stage 5</div>
+      <span class="stage-icon">📋</span>
+      <h4 class="c-green">Assemble</h4>
+      <p>Converts the structured JSON summary into a polished, formatted <strong>.docx</strong> Word document with proper headers, tables, and checkboxes.</p>
+      <span class="stage-tech">python-docx</span>
+    </div>
+
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ═══════════════════════════════════════════════ SSE EXPLAINER -->
+<div class="section">
+  <div class="section-title">Real-Time Updates</div>
+  <h2>How Live Progress Works (SSE)</h2>
+
+  <div class="sse-box">
+    <div class="sse-side">
+      <div class="icon">⚙️</div>
+      <h4>Backend (Python)</h4>
+      <p>Pipeline runs in a background thread. After each stage it pushes an event into an <strong>asyncio Queue</strong> — like dropping a letter in a mailbox.</p>
+    </div>
+    <div class="sse-arrow">
+      <div class="arr">→</div>
+      <span>SSE Stream</span>
+      <div class="arr">→</div>
+    </div>
+    <div class="sse-side">
+      <div class="icon">🖥️</div>
+      <h4>Frontend (React)</h4>
+      <p>An <strong>EventSource</strong> connection reads from the queue. Each event updates the progress bar, the spinning stage indicator, and the live message — instantly.</p>
+    </div>
+  </div>
+
+  <div class="sse-events">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Example SSE Events Received by Browser</div>
+    <div class="sse-event"><span class="stage-lbl">[ingest]</span> Reading PDF… &nbsp;<span style="color:var(--muted);margin-left:auto">progress: 5%</span></div>
+    <div class="sse-event"><span class="stage-lbl">[classify]</span> Mapping sections with AI… &nbsp;<span style="color:var(--muted);margin-left:auto">progress: 20%</span></div>
+    <div class="sse-event"><span class="stage-lbl">[extract]</span> Deal Criteria (3/11) &nbsp;<span style="color:var(--muted);margin-left:auto">progress: 47%</span></div>
+    <div class="sse-event"><span class="stage-lbl">[extract]</span> Investment Highlights (8/11) &nbsp;<span style="color:var(--muted);margin-left:auto">progress: 71%</span></div>
+    <div class="sse-event"><span class="stage-lbl">[synthesize]</span> Reviewing tone & consistency… &nbsp;<span style="color:var(--muted);margin-left:auto">progress: 85%</span></div>
+    <div class="sse-event"><span class="stage-lbl">[assemble]</span> Building DOCX… &nbsp;<span style="color:var(--muted);margin-left:auto">progress: 95%</span></div>
+    <div class="sse-event" style="border-color:rgba(16,185,129,0.3)"><span class="stage-lbl" style="color:#34d399;">[done]</span> Complete. &nbsp;<span style="color:var(--muted);margin-left:auto">progress: 100%</span></div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ═══════════════════════════════════════════════ COMPONENT CARDS -->
+<div class="section">
+  <div class="section-title">Components</div>
+  <h2>Every Piece of the System</h2>
+
+  <div class="comp-grid">
+
+    <!-- Upload -->
+    <div class="comp-card b-blue">
+      <div class="comp-icon accent-blue">📄</div>
+      <span class="layer-tag c-blue">Frontend · Page</span>
+      <h3>Upload Page <code style="font-size:11px;opacity:0.6">/</code></h3>
+      <p>The entry point. User fills in deal info and drops a PDF. On submit it calls <code>POST /api/jobs</code> and navigates to the progress page.</p>
+      <div class="how"><strong>Key detail:</strong> The file is sent as <code>multipart/form-data</code>. The backend responds immediately with a job ID — the heavy AI work happens async in a background thread.</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="comp-card b-blue">
+      <div class="comp-icon accent-blue">📡</div>
+      <span class="layer-tag c-blue">Frontend · Page</span>
+      <h3>Progress Page <code style="font-size:11px;opacity:0.6">/jobs/[id]</code></h3>
+      <p>Animated checklist of pipeline stages. Connects to the SSE stream and updates in real time as the AI processes each stage.</p>
+      <div class="how"><strong>Key detail:</strong> Uses a "trickle" animation — even between real events the progress bar slowly creeps forward so it never looks frozen. <code>queued</code> state maps to step 1 so the spinner shows immediately.</div>
+    </div>
+
+    <!-- Edit -->
+    <div class="comp-card b-green">
+      <div class="comp-icon accent-green">✏️</div>
+      <span class="layer-tag c-green">Frontend · Page</span>
+      <h3>Edit Page <code style="font-size:11px;opacity:0.6">/jobs/[id]/edit</code></h3>
+      <p>Side-by-side layout: live preview on the left, editable accordion fields on the right. Every change autosaves after 800ms.</p>
+      <div class="how"><strong>Key detail:</strong> Preview uses <code>transform: scale()</code> computed at runtime via <code>ResizeObserver</code> so the A4 document always fills its column exactly regardless of screen size.</div>
+    </div>
+
+    <!-- Preview -->
+    <div class="comp-card b-green">
+      <div class="comp-icon accent-green">🗒️</div>
+      <span class="layer-tag c-green">Frontend · Component</span>
+      <h3>DealSummaryPreview</h3>
+      <p>Renders the CIMSummary data object as formatted HTML that mirrors the final exported document — tables, checkboxes, styled headers.</p>
+      <div class="how"><strong>Key detail:</strong> What you see in the preview = exactly what gets exported. The same JSON object drives both the preview HTML and the python-docx assembly.</div>
+    </div>
+
+    <!-- Editors -->
+    <div class="comp-card b-green">
+      <div class="comp-icon accent-green">🎛️</div>
+      <span class="layer-tag c-green">Frontend · Component</span>
+      <h3>SectionEditors</h3>
+      <p>One collapsible accordion panel per CIM section. Text fields, checkboxes, and tables with add/remove rows — the right input for every data type.</p>
+      <div class="how"><strong>Key detail:</strong> Every change calls <code>onChange(updatedSummary)</code> which bubbles to the Edit page and simultaneously updates the live preview on the left.</div>
+    </div>
+
+    <!-- History Drawer -->
+    <div class="comp-card b-purple">
+      <div class="comp-icon accent-purple">📚</div>
+      <span class="layer-tag c-purple">Frontend · Component</span>
+      <h3>HistoryDrawer</h3>
+      <p>Slide-in panel from the right showing all previously saved deal snapshots. Click any row to open that saved state.</p>
+      <div class="how"><strong>Key detail:</strong> Uses a <strong>React Portal</strong> — renders directly on <code>document.body</code>, completely outside the page layout tree, so no CSS can accidentally hide or clip it.</div>
+    </div>
+
+    <!-- History View -->
+    <div class="comp-card b-purple">
+      <div class="comp-icon accent-purple">🕐</div>
+      <span class="layer-tag c-purple">Frontend · Page</span>
+      <h3>History View <code style="font-size:11px;opacity:0.6">/history/[id]</code></h3>
+      <p>Opens a previously saved snapshot. Same layout as the Edit page but loads the CIMSummary JSON from Supabase instead of a live job.</p>
+      <div class="how"><strong>Key detail:</strong> Export buttons still fully work — they send the loaded historical summary to the backend for fresh conversion to PDF/DOCX.</div>
+    </div>
+
+    <!-- Pipeline Core -->
+    <div class="comp-card b-amber">
+      <div class="comp-icon accent-amber">🤖</div>
+      <span class="layer-tag c-amber">Backend · Python</span>
+      <h3>pipeline_core.py</h3>
+      <p>The brain of the system. Orchestrates all AI calls in order: Ingest → Classify → Extract → Synthesize → Assemble.</p>
+      <div class="how"><strong>Key detail:</strong> Extract runs 11 GPT calls <strong>in parallel</strong> using <code>ThreadPoolExecutor</code>. After each stage, it calls <code>on_progress(stage, message, pct)</code> which pushes an event to the SSE queue.</div>
+    </div>
+
+    <!-- Jobs -->
+    <div class="comp-card b-amber">
+      <div class="comp-icon accent-amber">📬</div>
+      <span class="layer-tag c-amber">Backend · Python</span>
+      <h3>jobs.py</h3>
+      <p>Tracks every running job by ID. Manages the SSE event queue — the mailbox that connects the pipeline to the browser.</p>
+      <div class="how"><strong>Key detail:</strong> An in-memory <code>JOB_REGISTRY</code> dict stores each Job. Each job has an <code>asyncio.Queue</code>. Pipeline puts events in → SSE endpoint drains them out to the browser.</div>
+    </div>
+
+    <!-- PDF Export -->
+    <div class="comp-card b-amber">
+      <div class="comp-icon accent-amber">📥</div>
+      <span class="layer-tag c-amber">Backend · Python</span>
+      <h3>pdf_export.py</h3>
+      <p>Converts the assembled Word document to PDF using LibreOffice running headlessly (no UI) on the server.</p>
+      <div class="how"><strong>Key detail:</strong> Calls <code>soffice --headless --convert-to pdf</code> via subprocess. LibreOffice converts exactly like "Save As PDF" in Word — full formatting preserved.</div>
+    </div>
+
+    <!-- Supabase -->
+    <div class="comp-card b-green">
+      <div class="comp-icon accent-teal">🗄️</div>
+      <span class="layer-tag c-teal">Database</span>
+      <h3>Supabase</h3>
+      <p>Cloud Postgres database that stores saved summary snapshots. No custom SQL — uses Supabase's auto-generated REST API.</p>
+      <div class="how"><strong>Key detail:</strong> "Save to History" sends the full <code>CIMSummary</code> JSON + metadata (deal name, sponsor, timestamp) via <code>POST</code>. The History drawer reads with <code>GET</code>. Simple and serverless.</div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ═══════════════════════════════════════════════ DATA MODEL -->
+<div class="section">
+  <div class="section-title">Data Model</div>
+  <h2>The CIMSummary Object</h2>
+  <p style="color:var(--muted2);margin-bottom:24px;font-size:14px;">This single JSON object flows through every layer — AI extraction, live preview, editors, export, and history storage.</p>
+
+  <div class="json-box">
+<span class="json-muted">// CIMSummary — the core data structure</span>
+{
+  <span class="json-key">"deal_name"</span>: <span class="json-str">"Tailwind"</span>,
+  <span class="json-key">"sponsor_name"</span>: <span class="json-str">"TCP"</span>,
+  <span class="json-key">"date"</span>: <span class="json-str">"June 2025"</span>,
+
+  <span class="json-key">"deal_overview"</span>: {
+    <span class="json-key">"description"</span>: <span class="json-str">"B2B SaaS platform serving airline industry…"</span>
+  },
+
+  <span class="json-key">"deal_criteria"</span>: [
+    { <span class="json-key">"key"</span>: <span class="json-str">"target_industry"</span>, <span class="json-key">"value"</span>: <span class="json-str">"B2B software/SaaS"</span>, <span class="json-key">"checked"</span>: <span class="json-bool">true</span> },
+    { <span class="json-key">"key"</span>: <span class="json-str">"ltm_ebitda_above_3m"</span>, <span class="json-key">"value"</span>: <span class="json-str">"FY2025A Adj. EBITDA $6.2M"</span>, <span class="json-key">"checked"</span>: <span class="json-bool">true</span> }
+  ],
+
+  <span class="json-key">"company_overview"</span>: { <span class="json-key">"description"</span>: <span class="json-str">"ID90 is a travel technology platform…"</span> },
+
+  <span class="json-key">"sources_and_uses"</span>: {
+    <span class="json-key">"sources"</span>: [{ <span class="json-key">"label"</span>: <span class="json-str">"Senior Debt"</span>, <span class="json-key">"amount"</span>: <span class="json-num">42000000</span> }],
+    <span class="json-key">"uses"</span>:    [{ <span class="json-key">"label"</span>: <span class="json-str">"Purchase Price"</span>, <span class="json-key">"amount"</span>: <span class="json-num">68000000</span> }]
+  },
+
+  <span class="json-key">"investment_highlights"</span>: [ <span class="json-str">"98% gross revenue retention"</span>, <span class="json-str">"1.7M+ user accounts"</span> ],
+
+  <span class="json-muted">  // … + 6 more sections: management_team, financials, risks, etc.</span>
+}
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ═══════════════════════════════════════════════ TECH STACK -->
+<div class="section">
+  <div class="section-title">Technologies</div>
+  <h2>Tech Stack at a Glance</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:8px;">
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Frontend</div>
+      <div class="tech-row">
+        <div class="tech-pill"><div class="dot" style="background:#60a5fa"></div> Next.js 14 (React)</div>
+        <div class="tech-pill"><div class="dot" style="background:#38bdf8"></div> TypeScript</div>
+        <div class="tech-pill"><div class="dot" style="background:#7c3aed"></div> Tailwind CSS</div>
+        <div class="tech-pill"><div class="dot" style="background:#f1f5f9"></div> shadcn/ui</div>
+        <div class="tech-pill"><div class="dot" style="background:#f59e0b"></div> Lucide Icons</div>
+        <div class="tech-pill"><div class="dot" style="background:#10b981"></div> SSE (EventSource)</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Backend</div>
+      <div class="tech-row">
+        <div class="tech-pill"><div class="dot" style="background:#3b82f6"></div> Python / FastAPI</div>
+        <div class="tech-pill"><div class="dot" style="background:#a78bfa"></div> OpenAI GPT-4o</div>
+        <div class="tech-pill"><div class="dot" style="background:#f472b6"></div> pdfplumber</div>
+        <div class="tech-pill"><div class="dot" style="background:#34d399"></div> python-docx</div>
+        <div class="tech-pill"><div class="dot" style="background:#fbbf24"></div> LibreOffice (headless)</div>
+        <div class="tech-pill"><div class="dot" style="background:#2dd4bf"></div> Supabase (Postgres)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ FOOTER -->
+<div class="footer">
+  Built by <strong>Tristone Training</strong> · CIM Summarizer System Explainer
+</div>
+
+</body>
+</html>

@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 25% 97%;
+    --foreground: 215 53% 16%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 53% 16%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 9% 46%;
+    --border: 220 13% 90%;
+    --input: 220 13% 90%;
+    --ring: 213 65% 17%;
+    --primary: 213 65% 17%;
+    --primary-foreground: 210 40% 98%;
+    --accent: 220 14% 94%;
+    --accent-foreground: 215 53% 16%;
+    --destructive: 0 72% 51%;
+    --success: 86 41% 36%;
+    --radius: 0.6rem;
+  }
+  .dark {
+    --background: 222 24% 6%;
+    --foreground: 210 20% 96%;
+    --card: 222 24% 9%;
+    --card-foreground: 210 20% 96%;
+    --muted: 222 16% 14%;
+    --muted-foreground: 218 11% 65%;
+    --border: 222 16% 16%;
+    --input: 222 16% 16%;
+    --ring: 213 90% 67%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+    --accent: 222 16% 14%;
+    --accent-foreground: 210 20% 96%;
+    --destructive: 0 80% 60%;
+    --success: 142 60% 55%;
+  }
+  * { border-color: hsl(var(--border)); }
+  html, body { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+}
+
+/* Refined scrollbars (subtle, theme-aware) */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+
+/* Deal summary preview — Tristone template (brand colors locked, never themed) */
+.deal-page {
+  background: white;
+  width: 794px;        /* A4 @ 96dpi */
+  min-height: 1123px;
+  margin: 0 auto 24px;
+  box-shadow: 0 12px 40px -8px rgba(14,42,71,.18), 0 2px 8px rgba(14,42,71,.08);
+  border-radius: 6px;
+  position: relative;
+  display: flex;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 11px;
+  color: #1f2937;
+  overflow: hidden;
+}
+.deal-sidebar {
+  width: 38px;
+  background: #0E2A47;
+  flex-shrink: 0;
+}
+.deal-body {
+  flex: 1;
+  padding: 28px 28px 44px 28px;
+  position: relative;
+}
+.deal-footer {
+  position: absolute;
+  left: 38px;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  background: #548235;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.section-box {
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.box-gray { background: #EFEFEF; }
+.box-green { background: #E2EFDA; }
+.box-blue { background: #DDEBF7; }
+.section-head {
+  font-size: 10px;
+  font-weight: 800;
+  color: #0E2A47;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.bullet { display: flex; gap: 6px; margin-bottom: 3px; line-height: 1.35; }
+.bullet::before { content: "•"; color: #0E2A47; font-weight: 700; }
+
+table.deal-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+table.deal-table th, table.deal-table td { padding: 4px 6px; border-bottom: 1px solid #e5e7eb; }
+table.deal-table th { background: #D9E1F2; color: #0E2A47; text-align: left; }
+table.deal-table tfoot td { background: #F2F2F2; font-weight: 700; }
+table.fin-table th { background: #0E2A47; color: white; }
+
+.criterion-row { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: start; margin-bottom: 3px; }
+
+/* Print */
+@media print {
+  body { background: white; }
+  .no-print { display: none !important; }
+  .deal-page { box-shadow: none; margin: 0; page-break-after: always; }
+}

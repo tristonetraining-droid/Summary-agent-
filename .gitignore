@@ -1,9 +1,17 @@
+<<<<<<< HEAD
 # Secrets
 .env
+=======
+# Environment files
+.env
+.env.*
+!.env.example
+>>>>>>> e69a05b (Initial commit)
 
 # Python
 __pycache__/
 *.py[cod]
+<<<<<<< HEAD
 venv/
 .venv/
 
@@ -15,3 +23,42 @@ output/audit_log.json
 # OS
 .DS_Store
 Thumbs.db
+=======
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Backend runtime output
+backend/.jobs/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Nested repository metadata
+poppler-windows/.git/
+poppler-windows/
+>>>>>>> e69a05b (Initial commit)
