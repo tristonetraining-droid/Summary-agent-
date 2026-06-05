@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: briefforge
+      POSTGRES_PASSWORD: briefforge_dev
+      POSTGRES_DB: briefforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  briefforge:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://briefforge:briefforge_dev@postgres:5432/briefforge
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
